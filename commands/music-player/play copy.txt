@@ -1,0 +1,76 @@
+import { SlashCommandBuilder } from 'discord.js';
+import ytdl from 'ytdl-core';
+import { joinVoiceChannel, createAudioPlayer, createAudioResource, generateDependencyReport } from '@discordjs/voice';
+
+
+const playSong = async (interaction, song, voiceConnection) => {
+    const queue = interaction.client.songQueue.get(interaction.guildId);
+    if(!song){
+        voiceConnection.delete();
+        return;
+    }
+    console.log(generateDependencyReport());
+    const stream = ytdl(song.url, {filter: 'audioonly', quality: 'highestaudio'});
+    
+    const audioPlayer = createAudioPlayer();
+    const resource = createAudioResource(stream);
+
+    voiceConnection.subscribe(audioPlayer);
+    audioPlayer.play(resource);
+
+    await interaction.followUp(`Now playing: ${song.title}`);
+};
+
+
+export const data = new SlashCommandBuilder()
+    .setName('play')
+    .setDescription('Plays a song from youtube')
+    .addStringOption(option =>
+        option.setName('song')
+            .setDescription('The song to play')
+            .setRequired(true));
+
+export async function execute(interaction) {
+    await interaction.deferReply();
+    const voiceChannel = interaction.member.voice.channel;
+    if(!voiceChannel) 
+       return await interaction.reply('You need to be in a voice channel to use this command');
+
+    const songQuery = interaction.options.getString('song');
+    const SongInfo = await ytdl.getInfo(songQuery);
+    const song = {
+        title: SongInfo.videoDetails.title,
+        url: SongInfo.videoDetails.video_url
+    };
+
+    if(!interaction.client.songQueue.get(interaction.guildId)){
+        const queue = {
+            textChannel: interaction.channel,
+            voiceChannel: interaction.member.voice.channel,
+            connection: null,
+            songs: [],
+            volume: 5,
+            playing: true
+        }
+        interaction.client.songQueue.set(interaction.guildId, queue);
+        queue.songs.push(song);
+
+        try {
+            const voiceConnection = joinVoiceChannel({
+                channelId: queue.voiceChannel.id,
+                guildId: interaction.guildId,
+                adapterCreator: interaction.guild.voiceAdapterCreator
+            })
+            
+
+            playSong(interaction, queue.songs[0], voiceConnection);
+        } catch (error) {
+            console.error(error);
+            interaction.client.songQueue.delete(interaction.guildId);
+            return await interaction.reply('There was an error connecting to the voice channel');
+        }
+    } else{
+        interaction.client.songQueue.push(song);
+        return await interaction.reply(`Added ${song.title} to the queue`);
+    }
+}
