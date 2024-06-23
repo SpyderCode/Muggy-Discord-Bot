@@ -13,7 +13,7 @@ module.exports = {
             .setTitle('Now Playing')
             .setURL(currentTrack.url)
             .setDescription(`🎶 | **${currentTrack.name}**`)
-            .setAuthor({ name: currentTrack.author})
+            .setAuthor({ name: `Author: ${currentTrack.author}`})
             .setThumbnail(currentTrack.thumbnail)
             .setImage(currentTrack.thumbnail)
             .setColor(0x00FF00)
