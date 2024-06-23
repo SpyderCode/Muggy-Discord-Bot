@@ -34,7 +34,7 @@ module.exports = {
         });
 
         let playlist = await queue
-        .playlist(playlistInput, {requestedBy: interaction.user})
+        .playlist(playlistInput, {requestedBy: interaction.user.tag})
         .catch(err => {
             console.error(err);
             return interaction.followUp('There was an error getting the playlist!');

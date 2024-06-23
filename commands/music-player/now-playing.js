@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -9,6 +9,17 @@ module.exports = {
         if (!queue || !queue.isPlaying) return await interaction.reply({ content: '❌ | No music is being played!' });
 
         const currentTrack = queue.nowPlaying;
-        return await interaction.reply(`🎶 | **${currentTrack.name}** is currently playing!`);
+        const songEmbed = new EmbedBuilder()
+            .setTitle('Now Playing')
+            .setURL(currentTrack.url)
+            .setDescription(`🎶 | **${currentTrack.name}**`)
+            .setAuthor({ name: currentTrack.author})
+            .setThumbnail(currentTrack.thumbnail)
+            .setImage(currentTrack.thumbnail)
+            .setColor(0x00FF00)
+            .setFooter({text: `Requested by ${currentTrack.requestedBy}`})
+            .setTimestamp();
+
+        return await interaction.reply({ embeds: [songEmbed] });
     }
 }

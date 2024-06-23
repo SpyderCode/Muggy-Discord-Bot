@@ -44,7 +44,7 @@ module.exports ={
         if(force){
             
             song = await queue
-                .play(inputedSong, {index: 1, requestedBy: interaction.user })
+                .play(inputedSong, {index: 1, requestedBy: interaction.user.tag })
                 .catch(err => {
                     console.error(err);
                     return interaction.reply('There was an error playing the song!');
@@ -56,7 +56,7 @@ module.exports ={
             await interaction.followUp(`Now playing: ${song.name}`);
         } else {
             song = await queue
-                .play(inputedSong, {requestedBy: interaction.user })
+                .play(inputedSong, {requestedBy: interaction.user.tag })
                 .catch(err => {
                     console.error(err);
                     return interaction.reply('There was an error playing the song!');

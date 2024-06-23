@@ -12,7 +12,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
 //Create a new player instance
 const player = new Player(client, {
     leaveOnEmpty: true,
-    volume: 100,
+    volume: 30,
     quality: 'high',
     deafenOnJoin: true
 });
