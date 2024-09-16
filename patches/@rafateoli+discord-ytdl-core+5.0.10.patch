@@ -1,0 +1,160 @@
+diff --git a/node_modules/@rafateoli/discord-ytdl-core/index.ts b/node_modules/@rafateoli/discord-ytdl-core/index.ts
+index dafa86b..8a53fff 100644
+--- a/node_modules/@rafateoli/discord-ytdl-core/index.ts
++++ b/node_modules/@rafateoli/discord-ytdl-core/index.ts
+@@ -1,6 +1,7 @@
+-import ytdl, { downloadOptions } from '@distube/ytdl-core';
+-import { opus as Opus, FFmpeg } from 'prism-media';
+-import { Readable, Duplex } from 'stream';
++const ytdl = require('@distube/ytdl-core');
++const { downloadOptions } = require('@distube/ytdl-core');
++const { opus: Opus, FFmpeg } = require('prism-media');
++const { Readable, Duplex } = require('stream');
+ 
+ // ytdl events
+ const evn = [
+@@ -15,24 +16,27 @@ const evn = [
+     'reconnect',
+ ];
+ 
+-interface YTDLStreamOptions extends downloadOptions {
+-    seek?: number;
+-    encoderArgs?: string[];
+-    fmt?: string;
+-    opusEncoded?: boolean;
+-}
++// Define YTDLStreamOptions as a JavaScript object
++const YTDLStreamOptions = {
++    seek: undefined,
++    encoderArgs: undefined,
++    fmt: undefined,
++    opusEncoded: undefined,
++    ...downloadOptions
++};
+ 
+-interface StreamOptions {
+-    seek?: number;
+-    encoderArgs?: string[];
+-    fmt?: string;
+-    opusEncoded?: boolean;
+-}
++// Define StreamOptions as a JavaScript object
++const StreamOptions = {
++    seek: undefined,
++    encoderArgs: undefined,
++    fmt: undefined,
++    opusEncoded: undefined
++};
+ 
+ /**
+  * Create an opus stream for your video with provided encoder args
+- * @param url - YouTube URL of the video
+- * @param options - YTDL options
++ * @param {string} url - YouTube URL of the video
++ * @param {object} [options] - YTDL options
+  * @example const ytdl = require("@rafateoli/discord-ytdl-core");
+  * const stream = ytdl("VIDEO_URL", {
+  *     seek: 3,
+@@ -43,19 +47,15 @@ interface StreamOptions {
+  *     type: "opus"
+  * });
+  */
+-const StreamDownloader = (url: string, options?: YTDLStreamOptions) => {
++const StreamDownloader = (url, options = {}) => {
+     if (!url) {
+         throw new Error('No input url provided');
+     }
+     if (typeof url !== 'string') {
+-        throw new SyntaxError(
+-            `input URL must be a string. Received ${typeof url}!`
+-        );
++        throw new SyntaxError(`input URL must be a string. Received ${typeof url}!`);
+     }
+ 
+-    options ??= {};
+-
+-    let FFmpegArgs: string[] = [
++    let FFmpegArgs = [
+         '-analyzeduration',
+         '0',
+         '-loglevel',
+@@ -82,7 +82,8 @@ const StreamDownloader = (url: string, options?: YTDLStreamOptions) => {
+ 
+     const inputStream = ytdl(url, options);
+     const output = inputStream.pipe(transcoder);
+-    if (options && !options.opusEncoded) {
++
++    if (!options.opusEncoded) {
+         for (const event of evn) {
+             inputStream.on(event, (...args) => output.emit(event, ...args));
+         }
+@@ -109,13 +110,14 @@ const StreamDownloader = (url: string, options?: YTDLStreamOptions) => {
+         transcoder.destroy();
+         opus.destroy();
+     });
++
+     return outputStream;
+ };
+ 
+ /**
+  * Creates arbitraryStream
+- * @param stream Any readable stream source
+- * @param options Stream options
++ * @param {string|Readable|Duplex} stream - Any readable stream source
++ * @param {object} [options] - Stream options
+  * @example const streamSource = "https://listen.moe/kpop/opus";
+  * let stream = ytdl.arbitraryStream(streamSource, {
+  *     encoderArgs: ["-af", "asetrate=44100*1.25"],
+@@ -124,17 +126,13 @@ const StreamDownloader = (url: string, options?: YTDLStreamOptions) => {
+  *
+  * stream.pipe(fs.createWriteStream("kpop.mp3"));
+  */
+-const arbitraryStream = (
+-    stream: string | Readable | Duplex,
+-    options?: StreamOptions
+-) => {
++const arbitraryStream = (stream, options = {}) => {
+     if (!stream) {
+         throw new Error('No stream source provided');
+     }
+ 
+-    options ??= {};
++    let FFmpegArgs;
+ 
+-    let FFmpegArgs: string[];
+     if (typeof stream === 'string') {
+         FFmpegArgs = [
+             '-reconnect',
+@@ -182,14 +180,17 @@ const arbitraryStream = (
+     let transcoder = new FFmpeg({
+         args: FFmpegArgs,
+     });
++
+     if (typeof stream !== 'string') {
+         transcoder = stream.pipe(transcoder);
+         stream.on('error', () => transcoder.destroy());
+     }
+-    if (options && !options.opusEncoded) {
++
++    if (!options.opusEncoded) {
+         transcoder.on('close', () => transcoder.destroy());
+         return transcoder;
+     }
++
+     const opus = new Opus.Encoder({
+         rate: 48000,
+         channels: 2,
+@@ -201,6 +202,7 @@ const arbitraryStream = (
+         transcoder.destroy();
+         opus.destroy();
+     });
++
+     return outputStream;
+ };
+ 
+@@ -209,4 +211,4 @@ StreamDownloader.version = require('./package.json').version;
+ 
+ const DiscordYTDLCore = Object.assign(StreamDownloader, ytdl);
+ 
+-export = DiscordYTDLCore;
++module.exports = DiscordYTDLCore;

@@ -1,7 +1,7 @@
 //Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Player } = require('discord-music-player');
+const { Player } = require('@rafateoli/discord-music-player');
 const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
 
 const { token } = require('./config.json');
